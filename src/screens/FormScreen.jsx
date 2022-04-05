@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import NavigationBar from '../components/NavigationBar';
 import { Box } from '@mui/material';
 import FormLabel from '@mui/material/FormLabel';
@@ -13,6 +13,8 @@ import Alert from '@mui/material/Alert';
 import IconButton from '@mui/material/IconButton';
 import Collapse from '@mui/material/Collapse';
 import CloseIcon from '@mui/icons-material/Close';
+import CircularProgress from '@mui/material/CircularProgress';
+import AlertTitle from '@mui/material/AlertTitle';
 import {
   isStringField,
   isEmail,
@@ -20,7 +22,10 @@ import {
   isFileTypeAccepted,
   isValidUrl,
 } from '../utils/validators';
-import { submitApplication } from '../actions/formActions';
+import {
+  submitApplication,
+  clearSubmitFormApplicationState,
+} from '../actions/formActions';
 import { useDispatch, useSelector } from 'react-redux';
 const FormScreen = () => {
   const dispatch = useDispatch();
@@ -42,9 +47,14 @@ const FormScreen = () => {
   const [aboutYouEmptyFieldError, setAboutYouEmptyFieldError] = useState(false);
   const [liveInUsEmptyFieldError, setLiveInUsEmptyFieldError] = useState(false);
   const [openAlert, setOpenAlert] = useState(false);
-  const [alertSeverity, setAlertSeverity] = useState('info');
+  const [alertSeverity, setAlertSeverity] = useState('');
   const [alertMessage, setAlertMessage] = useState('');
-
+  const [alertTitle, setAlertTitle] = useState('');
+  const submitApplicationState = useSelector(
+    (state) => state.submitApplicationState
+  );
+  const { loading, success, error, applicationData } = submitApplicationState;
+  // Application submit action to submit the data to the end point
   const submitJobApplication = () => {
     if (firstName === '') {
       setFirstNameEmptyFieldError(true);
@@ -89,7 +99,8 @@ const FormScreen = () => {
     }
   };
 
-  const clearFormFields = () => {
+  // Reusable method to clear the form fields on clear and successful form submission actions.
+  const setFormFields = () => {
     setFirstName('');
     setLastName('');
     setEmail('');
@@ -105,13 +116,35 @@ const FormScreen = () => {
     setAboutYouEmptyFieldError(false);
     setLiveInUsEmptyFieldError(false);
     setCvFileEmptyFieldError(false);
+  };
+  // Method to set the all the fields  to empty on click and show message or form cleared
+  const clearFormFields = () => {
+    setFormFields();
     setOpenAlert(true);
-    setAlertSeverity('success');
+    setAlertSeverity('info');
+    setAlertTitle('Info');
     setAlertMessage('Form Cleared');
     setTimeout(() => {
       setOpenAlert(false);
     }, 500);
+    dispatch(clearSubmitFormApplicationState());
   };
+
+  // To check the success and error of form submission
+  useEffect(() => {
+    if (success) {
+      setOpenAlert(true);
+      setAlertTitle('Success');
+      setAlertMessage(`Application submitted successfully.`);
+      setAlertSeverity('success');
+      setFormFields();
+    } else if (error) {
+      setOpenAlert(true);
+      setAlertTitle('Error');
+      setAlertSeverity('error');
+      setAlertMessage(error);
+    }
+  }, [success, error]);
   return (
     <>
       <NavigationBar />
@@ -130,7 +163,7 @@ const FormScreen = () => {
             maxWidth: '100%',
           }}
         >
-          <Collapse in={openAlert}>
+          <Collapse in={openAlert} sx={{ mb: 2, ml: 2 }}>
             <Alert
               severity={alertSeverity}
               action={
@@ -145,9 +178,12 @@ const FormScreen = () => {
                   <CloseIcon fontSize="inherit" />
                 </IconButton>
               }
-              sx={{ mb: 2 }}
             >
+              <AlertTitle>{alertTitle}</AlertTitle>
               {alertMessage}
+              <br />
+              {applicationData &&
+                `Your application id is : ${applicationData.id}`}
             </Alert>
           </Collapse>
           <TextField
@@ -395,10 +431,22 @@ const FormScreen = () => {
             justifyContent: 'space-around',
           }}
         >
-          <Button variant="contained" onClick={submitJobApplication}>
-            Submit
+          <Button
+            variant="contained"
+            sx={{ width: '25%' }}
+            onClick={submitJobApplication}
+          >
+            {loading ? (
+              <CircularProgress sx={{ color: 'text.primary' }} />
+            ) : (
+              'Submit'
+            )}
           </Button>
-          <Button variant="contained" onClick={clearFormFields}>
+          <Button
+            variant="contained"
+            sx={{ width: '25%' }}
+            onClick={clearFormFields}
+          >
             Cancel
           </Button>
         </Box>
