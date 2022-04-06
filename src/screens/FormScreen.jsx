@@ -76,11 +76,11 @@ const FormScreen = () => {
     }
 
     if (
-      firstName !== '' ||
-      email !== '' ||
-      gitProfile !== '' ||
-      cvFile !== null ||
-      aboutYou !== '' ||
+      firstName !== '' &&
+      email !== '' &&
+      gitProfile !== '' &&
+      cvFile !== null &&
+      aboutYou !== '' &&
       liveInUs !== ''
     ) {
       const applicationFormData = new FormData();
